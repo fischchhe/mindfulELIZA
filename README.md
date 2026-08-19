@@ -4,7 +4,7 @@ A rule-based conversational agent in the ELIZA tradition, playing a mindfulness
 coach who is trying to sell you a course.
 
 Built as the ELIZA exercise from Chapter 2 of Jurafsky and Martin, *Speech and
-Language Processing*, then extended with a stage-based dialogue manager.
+Language Processing*, then extended with a stage-based dialogue manager. Started out as regex practice but then became a fun thing to show my friends. 
 
 ## Background
 
@@ -19,8 +19,8 @@ neutrally, she:
 
 - assigns every stated emotion an aura colour and keeps referring to it
 - treats denial as confirmation
-- refuses to accept a positive mood at face value
-- escalates toward a $249 course over roughly six turns
+- refuses to accept that a chat user could be in a positive mood
+- pushes towards a $249 course over roughly six turns
 
 ## Running
 
@@ -123,15 +123,13 @@ for name, stage in STAGES.items():
 
 ## Known limitations
 
-- **Negation scope** is approximated by a three-word window. "I'm not going to
-  work, I feel sad" is misclassified as denial.
 - **`nothing`** is in the numbness category, so "nothing is wrong" is read as
-  dissociation. Left in place deliberately.
+dissociation. Left in place deliberately.
 - **The neutral category is disabled.** Its words are all `REFLECTIONS` keys,
   and a `hit` pre-empts the echo, so "fine" returned an aura colour instead of
   the intended "just fine". Kept in the source, commented, with the reason.
 - **First-match-wins ordering** means category priority is positional. Adding a
-  category in the wrong place silently changes classification.
+  category in the wrong place changes classification.
 - **No parsing of any kind.** Word-level pattern matching only, as in the
   original.
 
