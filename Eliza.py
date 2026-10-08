@@ -6,9 +6,7 @@ Like Eliza but evil
 
 import re
 
-# ─────────────────────────────────────────────────────────────────────
-# DETECTION
-# ─────────────────────────────────────────────────────────────────────
+# --- DETECTION ---
 
 EMOTIONS = [
     # --- sadness ---
@@ -52,9 +50,7 @@ EMOTIONS = [
                 r"unappreciated|unwanted|rejected)\b", re.I), "sour chartreuse", "neg"),
 
     # --- numbness / disconnection ---
-    # NOTE: "nothing" here outranks the neutral phrases, so "nothing much"
-    # reads as static silver. Remove it from this list if you'd rather it
-    # fall through to the deadpan "just nothing much" echo.
+    # "nothing" also catches "nothing much"
     (re.compile(r"\b(numb|numbness|empty|hollow|flat|detached|disconnected|"
                 r"dissociated|nothing|blank|apathetic|indifferent|"
                 r"going through the motions)\b", re.I), "static silver", "neg"),
@@ -63,7 +59,7 @@ EMOTIONS = [
     (re.compile(r"\b(bored|boredom|unmotivated|uninspired|listless|"
                 r"sluggish|stagnant|in a rut|going nowhere)\b", re.I), "dusty beige", "neg"),
 
-    # --- elation (above plain happiness: stronger) ---
+    # --- elation (stronger than happy, so it goes first) ---
     (re.compile(r"\b(excited|excitement|thrilled|elated|ecstatic|overjoyed|euphoric|"
                 r"buzzing|giddy|pumped|delighted|amazing|fantastic|incredible|"
                 r"on top of the world)\b", re.I), "vivid orange", "pos"),
@@ -79,15 +75,8 @@ EMOTIONS = [
                 r"settled|steady|grounded|centred|centered|balanced|"
                 r"relaxed|comfortable|at ease|serene)\b", re.I), "warm yellow", "pos"),
 
-    # --- neutral ---
-    # DISABLED ON PURPOSE. Every word that was in here is also a REFLECTIONS key,
-    # and a "hit" fires before the echo can happen — so "fine" was reporting
-    # empty grey instead of coming back as "just fine". Left in place in case
-    # you want the colour back; deleting the neutral entries from REFLECTIONS
-    # would be the other way round.
-    # (re.compile(r"\b(fine|alright|all right|so-?so|meh|average|"
-    #             r"normal|nothing much|same as always|can'?t complain|"
-    #             r"neither here nor there|coping)\b", re.I), "empty grey"),
+    # neutral words ("fine", "meh" ...) are not here on purpose,
+    # they get echoed back via REFLECTIONS instead
 ]
 
 ALIASES = { 
@@ -120,14 +109,11 @@ REFLECT_RE = re.compile(
     re.I,
 )
 
-# ─────────────────────────────────────────────────────────────────────
-# THE SCRIPT
-# ─────────────────────────────────────────────────────────────────────
-# Outer key = stage. Inner key = what the user just did.
-#   "say"  : the line ({word} {colour} {echo} {Echo})
-#   "goto" : omitted -> next stage in ORDER
-#            "stay"  -> ask again from here
-#            "name"  -> jump anywhere, forwards or back
+# --- THE SCRIPT ---
+# outer key = stage, inner key = what the user just did
+# "say" = what Lizzy says
+# "goto" = where to go next. no goto = next stage, "stay" = same stage again,
+# or the name of a stage to jump there
 
 STAGES = {
     "open": {
@@ -155,7 +141,7 @@ STAGES = {
     },
     "undermine": {
         "positive": {
-            "say": "Still {word}. Still {colour}. Nobody is {word} every hour of every day — "
+            "say": "Still {word}. Still {colour}. Nobody is {word} every hour of every day, "
                    "and the ones who insist they are, are working hardest of all. "
                    "What is the {word} covering?",
             "goto": "stay"},
@@ -193,7 +179,7 @@ STAGES = {
                    "{colour} outlasts every one of them. And how long has this been an issue in your life?",
             "goto": "stay"},
         "positive": {
-            "say": "{Cap_word} — already? That is very fast for an aura this {colour}. "
+            "say": "{Cap_word}? Already? That is very fast for an aura this {colour}. "
                    "Sit back down with me. How are you really?",
             "goto": "undermine"},
     },
@@ -268,8 +254,8 @@ STAGES = {
 
     "sold": {  
         "hit": {
-            "say": "Marvellous. The link is on its way. Your {colour} is lifting already — "
-                   "can you feel it? Tell me everything about the {word}, we have two weeks.",
+            "say": "Marvellous. The link is on its way. Your {colour} is lifting already. "
+                   "Can you feel it? Tell me everything about the {word}, we have two weeks.",
             "goto": "stay"},
         "miss": {
             "say": "Marvellous. The link is on its way. Everything from here is included "
@@ -288,9 +274,7 @@ GOODBYE = ("Yes, you can leave now. You're welcome.")
 EXITS = {"bye", "quit", "exit", "goodbye", ""}
 
 
-# ─────────────────────────────────────────────────────────────────────
-# THE ENGINE
-# ─────────────────────────────────────────────────────────────────────
+# --- THE ENGINE ---
 
 def is_negated(text, start):
     """Was there a negation in the three words before the emotion word?"""
@@ -361,7 +345,7 @@ def reply(text, memory):
     else:
         nxt = advance(memory["stage"], entry.get("goto"))
 
-    # Anti-loop guard: self-loops would otherwise trap the user foreve
+    # so nobody gets stuck in one stage foreve
     memory["stalls"] = memory["stalls"] + 1 if nxt == memory["stage"] else 0
     if memory["stalls"] >= STALL_LIMITS.get(memory["stage"], STALL_LIMIT):
         nxt = advance(memory["stage"], None)
